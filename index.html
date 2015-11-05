@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script type="text/javascript" src="exif-js/exif.js"></script>
+    <!--<script type="text/javascript" src="binaryajax/binaryajax.js"></script>-->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="css/leaflet.css">
+    <script src="js/leaflet.js"></script>
+</head>
+
+<body style="background: rgb(128, 128, 128); z-index: 0;">
+
+    <input id="file-input" type="file" style="z-index: 4;" multiple/>
+    <div id="map" style="z-index: 2;  position: fixed; bottom: 0; right: 0; width:100%; height:95%;"> </div>
+   
+    <script>
+        /*global L, EXIF*/
+
+        var markers = [];
+
+        function compare(a, b) {
+            if (a.time < b.time)
+                return 1;
+            if (a.time > b.time)
+                return -1;
+            return 0;
+        }
+        
+        function getMarkers(files) {
+            var thumbHTML = [];
+            for (var fileNum = 0; fileNum < files.length; fileNum++) {
+
+                EXIF.getData(files[fileNum], function() {
+                    if (EXIF.getTag(this, "GPSInfoIFDPointer")) {
+                        var lat = EXIF.getTag(this, "GPSLatitude");
+                        var lon = EXIF.getTag(this, "GPSLongitude");
+
+                        //Convert coordinates to WGS84 decimal
+                        var latRef = EXIF.getTag(this, "GPSLatitudeRef") || "N";
+                        var lonRef = EXIF.getTag(this, "GPSLongitudeRef") || "W";
+                        var gpsTimeStamp = EXIF.getTag(this, "GPSTimeStamp");
+                        var gpsDateStamp = EXIF.getTag(this, "GPSDateStamp");
+                        var timeString = "" + gpsDateStamp.replace(/:/g, "") + (gpsTimeStamp[0] * 3600 + gpsTimeStamp[1] * 60 + gpsTimeStamp[2]);
+                        var fixedLat = (lat[0] + lat[1] / 60 + lat[2] / 3600) * (latRef == "N" ? 1 : -1);
+                        var fixedLon = (lon[0] + lon[1] / 60 + lon[2] / 3600) * (lonRef == "W" ? -1 : 1);
+                        var marker = L.marker([fixedLat, fixedLon]);
+
+                        markers.push({
+                            geotagged: true,
+                            time: timeString,
+                            lat: fixedLat,
+                            lon: fixedLon,
+                            marker: marker,
+                            thumbHTML: null
+                        });
+
+                        if (markers.length === files.length) {
+                            plotMarkers();
+                        }
+                        return;
+                    }
+                    else {
+                        markers.push({
+                            geotagged: false,
+                            time: null,
+                            lat: null,
+                            lon: null,
+                            marker: null,
+                            thumbHTML: null
+                        });
+                        //alert("file with no geolocation found");
+                        //need to remove this photo from the list - we can't plot its location
+
+                    }
+                    return;
+                });
+            }
+        }
+
+        function plotMarkers() {
+
+            // build a point list joining the photo locations - will use this to plot a line
+            var pointList = [];
+            markers.sort(compare); //should sort by timestamp as per sort function defined above
+
+            /* inset your code here */
+
+            // add the line to the map
+            var firstpolyline = // and here...
+            
+           
+            //centre the map on the last marker
+            //TODO: centre on middle of route
+            //TODO: modify zoom to include whole route
+            map.setView([markers[markers.length - 1].lat, markers[markers.length - 1].lon], 18); //set map location to last timestamp
+            
+
+
+
+        }
+
+
+        var map = L.map('map', {
+            zoomControl: true,
+            attributionControl: true
+        }).setView([51.5252, -0.0902], 15);
+
+        var osmTileUrl = 'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png';
+
+        var osmLayer = L.tileLayer(osmTileUrl, {
+            id: 'OSM',
+            minZoom: 7,
+            maxZoom: 18,
+            detectRetina: 'False'
+        });
+
+        osmLayer.addTo(map);
+
+        //L.control.layers(baseMaps).addTo(map);
+
+        document.getElementById("file-input").onchange = function(e) {
+            getMarkers(e.target.files);
+        }
+    </script>
+
+
+
+</body>
+
+</html>
