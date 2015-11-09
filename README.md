@@ -15,7 +15,7 @@ http://www.openstreetmap.org/
 
 To enter you will have to fork this repository commit your changes into your git repo and either make a pull request to us or email me the link: jeevan.khaira@os.uk
 
-Competition ends midnight on 12/11/2015
+Competition ends midnight on 16/11/2015
 
 Feel free to contact me or use GitHub to raise any issues or ask questions.
 
